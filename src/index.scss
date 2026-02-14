@@ -16,8 +16,9 @@
   --reset-hover-border: #d67c45;
   --focus-ring-color: #8a4620;
   --tile-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
-  --slide-distance: 14px;
-  --slide-duration: 160ms;
+  --slide-distance: 22px;
+  --slide-duration: 280ms;
+  --slide-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
   --t-2-bg: #fff1e6;
   --t-4-bg: #ffe0cc;
   --t-8-bg: #ffc6a8;

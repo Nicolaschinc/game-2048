@@ -19,6 +19,7 @@ function App() {
     resetGame,
     performMove,
     getGameState,
+    mergedPositions,
   } = useGameState();
 
   const [touchStart, setTouchStart] = useState(null);
@@ -263,6 +264,9 @@ function App() {
             const isNew =
               newTilePos && newTilePos.r === r && newTilePos.c === c;
             const isChanged = prevGrid && prevGrid[r][c] !== v;
+            const isMerged =
+              mergedPositions &&
+              mergedPositions.some((p) => p.r === r && p.c === c);
             let animClass = "";
             if (isNew) animClass = "pop-in";
             else if (isChanged && animating && lastDir)
@@ -272,10 +276,10 @@ function App() {
               <div
                 key={`${r}-${c}`}
                 role="gridcell"
-                className={`tile ${v === 0 ? "empty" : "v-" + v} ${v !== 0 ? animClass : ""}`}
+                className={`tile ${v === 0 ? "empty" : "v-" + v} ${v !== 0 ? animClass : ""} ${isMerged && v !== 0 ? "merge-bounce" : ""}`}
                 aria-label={v === 0 ? "空" : String(v)}
               >
-                {v !== 0 ? v : ""}
+                <div className="tile-inner">{v !== 0 ? v : ""}</div>
               </div>
             );
           }),

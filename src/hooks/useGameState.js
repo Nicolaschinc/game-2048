@@ -8,6 +8,7 @@ const useGameState = () => {
   const [animating, setAnimating] = useState(false)
   const [newTilePos, setNewTilePos] = useState(null)
   const [isGameOver, setIsGameOver] = useState(false)
+  const [mergedPositions, setMergedPositions] = useState(null)
   
   const prevGridRef = useRef(null)
 
@@ -32,14 +33,16 @@ const useGameState = () => {
   const mergeLine = (line) => {
     let s = 0
     const a = compress(line)
+    const mergedIdx = []
     for (let i = 0; i < 3; i++) {
       if (a[i] !== 0 && a[i] === a[i + 1]) {
         a[i] = a[i] * 2
         s += a[i]
         a[i + 1] = 0
+        mergedIdx.push(i)
       }
     }
-    return { line: compress(a), gained: s }
+    return { line: compress(a), gained: s, mergedIdx }
   }
 
   // Move Logic
@@ -47,45 +50,58 @@ const useGameState = () => {
     let moved = false
     let gainedTotal = 0
     let ng = []
+    const merged = []
 
     if (direction === 'left') {
       ng = currentGrid.map(row => {
-        const { line, gained } = mergeLine(row)
+        const { line, gained, mergedIdx } = mergeLine(row)
         if (!moved && line.some((v, i) => v !== row[i])) moved = true
         gainedTotal += gained
+        if (mergedIdx && mergedIdx.length) {
+          mergedIdx.forEach(i => merged.push({ r: ng.length, c: i }))
+        }
         return line
       })
     } else if (direction === 'right') {
       ng = currentGrid.map(row => {
         const rev = row.slice().reverse()
-        const { line, gained } = mergeLine(rev)
+        const { line, gained, mergedIdx } = mergeLine(rev)
         const res = line.slice().reverse()
         if (!moved && res.some((v, i) => v !== row[i])) moved = true
         gainedTotal += gained
+        if (mergedIdx && mergedIdx.length) {
+          mergedIdx.forEach(i => merged.push({ r: ng.length, c: 3 - i }))
+        }
         return res
       })
     } else if (direction === 'up') {
       ng = Array.from({ length: 4 }, () => Array(4).fill(0))
       for (let c = 0; c < 4; c++) {
         const col = [currentGrid[0][c], currentGrid[1][c], currentGrid[2][c], currentGrid[3][c]]
-        const { line, gained } = mergeLine(col)
+        const { line, gained, mergedIdx } = mergeLine(col)
         for (let r = 0; r < 4; r++) ng[r][c] = line[r]
         if (!moved && line.some((v, i) => v !== col[i])) moved = true
         gainedTotal += gained
+        if (mergedIdx && mergedIdx.length) {
+          mergedIdx.forEach(i => merged.push({ r: i, c }))
+        }
       }
     } else if (direction === 'down') {
       ng = Array.from({ length: 4 }, () => Array(4).fill(0))
       for (let c = 0; c < 4; c++) {
         const col = [currentGrid[3][c], currentGrid[2][c], currentGrid[1][c], currentGrid[0][c]]
-        const { line, gained } = mergeLine(col)
+        const { line, gained, mergedIdx } = mergeLine(col)
         const res = line.slice().reverse()
         for (let r = 0; r < 4; r++) ng[r][c] = res[r]
         if (!moved && res.some((v, i) => v !== [currentGrid[0][c], currentGrid[1][c], currentGrid[2][c], currentGrid[3][c]][i])) moved = true
         gainedTotal += gained
+        if (mergedIdx && mergedIdx.length) {
+          mergedIdx.forEach(i => merged.push({ r: 3 - i, c }))
+        }
       }
     }
 
-    return { grid: ng, moved, gained: gainedTotal }
+    return { grid: ng, moved, gained: gainedTotal, mergedPositions: merged }
   }, [])
 
   const checkGameOver = useCallback((g) => {
@@ -112,6 +128,7 @@ const useGameState = () => {
     setNewTilePos(null)
     setLastDir(null)
     setIsGameOver(false)
+    setMergedPositions(null)
     prevGridRef.current = g
   }, [addRandomTile])
 
@@ -129,6 +146,7 @@ const useGameState = () => {
     setLastDir(dir)
     setAnimating(true)
     setMoves(m => m + 1)
+    setMergedPositions(res.mergedPositions && res.mergedPositions.length ? res.mergedPositions : null)
     
     if (res.gained) setScore(v => v + res.gained)
     
@@ -138,6 +156,12 @@ const useGameState = () => {
 
     return { moved: true, gained: res.gained, newGrid: withTile }
   }, [grid, isGameOver, moveGrid, addRandomTile, checkGameOver])
+
+  useEffect(() => {
+    if (!animating) {
+      setMergedPositions(null)
+    }
+  }, [animating])
 
   // Expose a snapshot getter for AI
   const getGameState = useCallback(() => {
@@ -161,6 +185,7 @@ const useGameState = () => {
     newTilePos,
     isGameOver,
     prevGrid: prevGridRef.current,
+    mergedPositions,
     
     // Actions
     setAnimating,
