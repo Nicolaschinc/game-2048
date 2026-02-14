@@ -111,6 +111,9 @@
   border-radius: 12px;
   box-shadow: var(--board-shadow);
   touch-action: none;
+  contain: layout paint;
+  will-change: transform;
+  transform: translateZ(0);
 
   &:focus-visible {
     outline: 3px solid var(--focus-ring-color);
@@ -130,6 +133,8 @@
   transition: transform 100ms ease;
   box-shadow: var(--tile-shadow);
   will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 
   &:focus {
     outline: none;
@@ -166,20 +171,25 @@
 }
 
 @keyframes slide-left {
-  from { transform: translateX(var(--slide-distance)); }
-  to { transform: translateX(0); }
+  from { transform: translate3d(var(--slide-distance), 0, 0); }
+  to { transform: translate3d(0, 0, 0); }
 }
 @keyframes slide-right {
-  from { transform: translateX(calc(-1 * var(--slide-distance))); }
-  to { transform: translateX(0); }
+  from { transform: translate3d(calc(-1 * var(--slide-distance)), 0, 0); }
+  to { transform: translate3d(0, 0, 0); }
 }
 @keyframes slide-up {
-  from { transform: translateY(var(--slide-distance)); }
-  to { transform: translateY(0); }
+  from { transform: translate3d(0, var(--slide-distance), 0); }
+  to { transform: translate3d(0, 0, 0); }
 }
 @keyframes slide-down {
-  from { transform: translateY(calc(-1 * var(--slide-distance))); }
-  to { transform: translateY(0); }
+  from { transform: translate3d(0, calc(-1 * var(--slide-distance)), 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+
+@media (pointer: coarse) {
+  .board { --slide-duration: 120ms; }
+  .tile { box-shadow: 0 1px 1px rgba(0,0,0,0.18); }
 }
 
 @keyframes pop-in {

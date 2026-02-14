@@ -43,8 +43,8 @@ export const fetchAIComment = async (systemPrompt, userContent) => {
         { role: "user", content: userContent }
       ],
       model: "deepseek-chat",
-      temperature: 1.3, // 稍微调高温度，增加趣味性
-      max_tokens: 60,   // 限制回复长度，避免啰嗦
+      temperature: 1.0,
+      max_tokens: 60,
     })
 
     // Track usage
@@ -52,13 +52,16 @@ export const fetchAIComment = async (systemPrompt, userContent) => {
       TokenManager.addUsage(completion.usage)
     }
 
-    const content = completion.choices[0].message.content
-    // 简单的解析逻辑：假设 AI 返回格式为 "Mood: 评论内容" 或直接返回内容
-    // 这里我们先简单处理，默认 mood 为 NEUTRAL，后续可以让 AI 按 JSON 格式返回
-    return {
-      text: content,
-      mood: 'NEUTRAL' // 暂时默认，后续优化 Prompt 让 AI 返回情绪
+    const content = completion.choices[0].message.content?.trim()
+    try {
+      const parsed = JSON.parse(content)
+      if (parsed && typeof parsed.text === 'string') {
+        return { text: parsed.text, mood: parsed.mood || 'NEUTRAL' }
+      }
+    } catch {
+      /* noop */
     }
+    return { text: content || '', mood: 'NEUTRAL' }
   } catch (error) {
     console.error('DeepSeek API call failed:', error)
     return null

@@ -10,7 +10,7 @@ const MOOD_EMOJIS = {
   NEUTRAL: '😐'
 }
 
-const AIAssistant = ({ message, mood, aiEnabled, onToggle }) => {
+const AIAssistant = ({ message, mood, aiEnabled, onToggle, lastInput, lastOutput }) => {
   const [showConfig, setShowConfig] = useState(false)
   const [tokenUsage, setTokenUsage] = useState(() => TokenManager.getUsage())
   // We keep tokenLimit in state to reflect the initial load, though it is now fixed.
@@ -69,6 +69,12 @@ const AIAssistant = ({ message, mood, aiEnabled, onToggle }) => {
               </div>
               <button className="reset-btn" onClick={handleReset}>重置</button>
               <div className="config-tip">右键头像切换设置</div>
+              {aiEnabled && (
+                <>
+                  <div className="config-row"><span>入参: {lastInput || '-'}</span></div>
+                  <div className="config-row"><span>返回: {lastOutput || '-'}</span></div>
+                </>
+              )}
             </div>
         )}
       </div>
