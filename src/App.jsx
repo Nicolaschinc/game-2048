@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import './App.scss'
 import useGameState from './hooks/useGameState'
 import { getBestMove } from './ai/engine'
@@ -23,12 +23,41 @@ function App() {
 
   const [touchStart, setTouchStart] = useState(null)
   const boardRef = useRef(null)
+  const greetedRef = useRef(false)
   
   // State
   const [aiEnabled, setAiEnabled] = useState(true)
-  const [aiMessage, setAiMessage] = useState("你好，我是2048！")
+  const [aiMessage, setAiMessage] = useState("") // Start empty
   const [aiMood, setAiMood] = useState("NEUTRAL")
   const [aiSuggestion, setAiSuggestion] = useState("")
+  const [messageQueue, setMessageQueue] = useState([])
+  const [isProcessingQueue, setIsProcessingQueue] = useState(false)
+
+  // Message Queue Processor
+  useEffect(() => {
+    let timer = null;
+    
+    if (messageQueue.length > 0 && !isProcessingQueue) {
+      // Use setTimeout to schedule state updates outside the render phase
+      // to avoid "synchronous state update in effect" warning
+      timer = setTimeout(() => {
+        const nextMessage = messageQueue[0];
+        setAiMessage(nextMessage.text);
+        setAiMood(nextMessage.mood);
+        setIsProcessingQueue(true);
+        
+        // Schedule completion after delay
+        setTimeout(() => {
+          setMessageQueue(prev => prev.slice(1));
+          setIsProcessingQueue(false);
+        }, 2500);
+      }, 0);
+    }
+    
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [messageQueue, isProcessingQueue]);
 
   // AI Logic - Tactical Suggestions (Local)
   useEffect(() => {
@@ -43,7 +72,7 @@ function App() {
   }, [grid, isGameOver, aiEnabled])
 
   // AI Logic - Emotional Comments
-  const triggerAI = async (type) => {
+  const triggerAI = useCallback(async (type) => {
     if (!aiEnabled) return
     // Use getGameState() to provide context for comments
     const gameState = getGameState()
@@ -53,10 +82,17 @@ function App() {
     
     // Check if result exists (it might fail silently or return default)
     if (result) {
-      setAiMessage(result.text)
-      setAiMood(result.mood)
+      // Add to queue instead of setting directly
+      setMessageQueue(prev => [...prev, result])
     }
-  }
+  }, [aiEnabled, getGameState])
+
+  // Initial Greeting (guarded against StrictMode double-invoke)
+  useEffect(() => {
+    if (!aiEnabled || greetedRef.current) return
+    greetedRef.current = true
+    setTimeout(() => triggerAI('start'), 0)
+  }, [aiEnabled, triggerAI])
 
   const handleMove = (dir) => {
     const { moved, gained, newGrid } = performMove(dir)
@@ -90,6 +126,7 @@ function App() {
     else if (e.key === 'ArrowRight') handleMove('right')
     else if (e.key === 'ArrowUp') handleMove('up')
     else if (e.key === 'ArrowDown') handleMove('down')
+    else if (e.key === 'r' || e.key === 'R') { resetGame(); triggerAI('start'); }
   }
 
   const onTouchStart = e => {
@@ -118,11 +155,6 @@ function App() {
     // Focus game board on load
     const el = boardRef.current
     if (el) el.focus()
-    // AI Greeting on start - Wrapped in timeout to avoid direct state update during render
-    const timer = setTimeout(() => {
-      triggerAI('start')
-    }, 500)
-    return () => clearTimeout(timer)
   }, [])
 
   useEffect(() => {
@@ -130,7 +162,7 @@ function App() {
       const t = setTimeout(() => setAnimating(false), 160)
       return () => clearTimeout(t)
     }
-  }, [animating])
+  }, [animating, setAnimating])
   
   // Check Game Over
   useEffect(() => {
@@ -141,14 +173,33 @@ function App() {
       }, 500)
       return () => clearTimeout(timer)
     }
-  }, [isGameOver])
+  }, [isGameOver, triggerAI])
 
   return (
     <div className="game">
-      <div className="header">
-        <h1>2048</h1>
-        <div className="score" aria-live="polite">当前分数：{score}</div>
-        <button className="reset" onClick={() => { resetGame(); triggerAI('start'); }}>重新开始</button>
+      <div className="header" role="banner">
+        <div className="header-top">
+          <h1 className="title">2048</h1>
+          <div className="actions">
+            <div className="score" aria-live="polite" aria-label={`当前分数 ${score}`}>
+              <span className="score-label">分数</span>
+              <span className="score-value">{score}</span>
+            </div>
+            <button 
+              className="reset" 
+              aria-label="重新开始 (R)"
+              onClick={() => { resetGame(); triggerAI('start'); }}
+            >
+              <span className="btn-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 5V2L8 6l4 4V7c3.314 0 6 2.686 6 6s-2.686 6-6 6-6-2.686-6-6H4c0 4.418 3.582 8 8 8s8-3.582 8-8-3.582-8-8-8z" fill="currentColor"/>
+                </svg>
+              </span>
+              <span className="btn-text">重新开始</span>
+              <span className="kbd" aria-hidden="true">R</span>
+            </button>
+          </div>
+        </div>
       </div>
       
       <AIAssistant

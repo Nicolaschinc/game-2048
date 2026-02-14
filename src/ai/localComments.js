@@ -3,10 +3,11 @@ import { fetchAIComment, isAIConfigured } from './llmClient'
 // Mock LLM / Rule-based Comment Engine
 const COMMENTS = {
   start: [
-    { text: "准备好了吗？让我们冲向 4096！", mood: "EXCITED" },
-    { text: "我会盯着你的每一步操作...", mood: "NEUTRAL" },
-    { text: "今天的手气看起来不错！", mood: "HAPPY" },
-    { text: "深呼吸，开始我们的表演。", mood: "HAPPY" }
+    { text: "嘀——检测到高智商波动！我是 Linky，准备好把那些乱糟糟的数字方块‘咔嚓’合并了吗？", mood: "EXCITED" },
+    { text: "2... 4... 8... 哎呀，数到后面我的核心都要烧糊啦！Linky 已经就位，快带我飞！", mood: "WORRIED" },
+    { text: "主、主人！格子只有 16 个，再不合并的话，Linky 就要被挤成纸片啦！QAQ", mood: "WORRIED" },
+    { text: "今天的目标是拼出那个闪闪发光的 2048 吗？别担心，Linky 会一直盯着屏幕（为你加油）的！", mood: "HAPPY" },
+    { text: "$2^n$ 的魔法已启动。你好，我是 Linky，你的首席智囊团。", mood: "NEUTRAL" }
   ],
   merge_small: [
     { text: "积少成多！", mood: "HAPPY" },
@@ -74,7 +75,8 @@ const SYSTEM_PROMPT = `
  */
 export const getComment = async (type, context = {}) => {
   // 1. 优先尝试云端 AI (如果是关键事件)
-  const shouldUseAI = isAIConfigured() && ['start', 'game_over', 'high_score', 'idle', 'merge_large'].includes(type);
+  // 注意：'start' 事件强制使用本地库，以展示用户定制的欢迎语
+  const shouldUseAI = isAIConfigured() && ['game_over', 'high_score', 'idle', 'merge_large'].includes(type);
   
   if (shouldUseAI) {
     try {

@@ -32,6 +32,19 @@ const AIAssistant = ({ message, mood, aiEnabled, onToggle }) => {
       setTokenUsage(0);
   }
 
+  // Determine animation class based on mood
+  const getAnimClass = () => {
+    if (!aiEnabled) return '';
+    switch(mood) {
+      case 'HAPPY': return 'anim-happy';
+      case 'EXCITED': return 'anim-excited';
+      case 'WORRIED': return 'anim-worried';
+      case 'SARCASITC': return 'anim-sarcastic'; // Typo in original code 'SARCASITC'
+      case 'NEUTRAL': return 'anim-neutral';
+      default: return '';
+    }
+  };
+
   return (
     <div className={`ai-assistant ${aiEnabled ? 'active' : 'inactive'}`}>
       <div className="ai-character-wrapper">
@@ -43,7 +56,7 @@ const AIAssistant = ({ message, mood, aiEnabled, onToggle }) => {
           onContextMenu={(e) => { e.preventDefault(); setShowConfig(!showConfig); }}
         >
           <div className="ai-avatar">
-            <span role="img" aria-label="mood">
+            <span role="img" aria-label="mood" className={getAnimClass()}>
               {aiEnabled ? (MOOD_EMOJIS[mood] || '🤖') : '😴'}
             </span>
           </div>
