@@ -26,7 +26,7 @@ function App() {
   
   // State
   const [aiEnabled, setAiEnabled] = useState(true)
-  const [aiMessage, setAiMessage] = useState("你好，我是2048 AI助手！")
+  const [aiMessage, setAiMessage] = useState("你好，我是2048！")
   const [aiMood, setAiMood] = useState("NEUTRAL")
   const [aiSuggestion, setAiSuggestion] = useState("")
 
@@ -59,11 +59,29 @@ function App() {
   }
 
   const handleMove = (dir) => {
-    const { moved, gained } = performMove(dir)
+    const { moved, gained, newGrid } = performMove(dir)
     
     if (moved) {
-      if (gained > 100) triggerAI('good_move')
-      if (gained > 500) triggerAI('high_score')
+      // Prioritize high value events
+      if (gained > 500) {
+        triggerAI('high_score')
+      } else if (gained >= 128) {
+        triggerAI('merge_large')
+      } else if (gained >= 64) {
+        if (Math.random() > 0.3) triggerAI('merge_medium')
+      } else {
+        // Check for crowded grid
+        const emptyCells = newGrid.flat().filter(c => c === 0).length
+        if (emptyCells <= 2 && Math.random() > 0.6) {
+          triggerAI('grid_full')
+        } else if (gained > 0 && Math.random() > 0.8) {
+          // Occasional comment on small merges
+          triggerAI('merge_small')
+        }
+      }
+    } else {
+      // Invalid move attempt
+       if (Math.random() > 0.7) triggerAI('bad_move')
     }
   }
 
@@ -173,7 +191,6 @@ function App() {
         ))}
       </div>
       {isGameOver && <div className="game-over">游戏结束!</div>}
-      <div className="hint">使用键盘方向键移动方块</div>
     </div>
   )
 }

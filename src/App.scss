@@ -13,8 +13,19 @@
 
 .header {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 444px; /* board width (420px) + padding (12px * 2) = 444px. Or just match visual alignment */
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
   gap: 1rem;
 }
 
