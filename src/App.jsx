@@ -1,115 +1,70 @@
 import { useEffect, useRef, useState } from 'react'
 import './App.scss'
+import useGameState from './hooks/useGameState'
+import { getBestMove } from './ai/engine'
+import { getComment } from './ai/localComments'
+
+import AIAssistant from './components/AIAssistant'
 
 function App() {
-  const [grid, setGrid] = useState(Array.from({ length: 4 }, () => Array(4).fill(0)))
-  const [score, setScore] = useState(0)
-  const [lastDir, setLastDir] = useState(null)
-  const [animating, setAnimating] = useState(false)
-  const [newTilePos, setNewTilePos] = useState(null)
+  const {
+    grid,
+    score,
+    lastDir,
+    animating,
+    newTilePos,
+    isGameOver,
+    prevGrid,
+    setAnimating,
+    resetGame,
+    performMove,
+    getGameState
+  } = useGameState()
+
   const [touchStart, setTouchStart] = useState(null)
-  const prevGridRef = useRef(null)
   const boardRef = useRef(null)
+  
+  // State
+  const [aiEnabled, setAiEnabled] = useState(true)
+  const [aiMessage, setAiMessage] = useState("你好，我是2048 AI助手！")
+  const [aiMood, setAiMood] = useState("NEUTRAL")
+  const [aiSuggestion, setAiSuggestion] = useState("")
 
-  const addRandomTile = g => {
-    const empties = []
-    for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) if (g[r][c] === 0) empties.push([r, c])
-    if (empties.length === 0) return { grid: g, pos: null }
-    const [r, c] = empties[Math.floor(Math.random() * empties.length)]
-    const v = Math.random() < 0.9 ? 2 : 4
-    const ng = g.map(row => row.slice())
-    ng[r][c] = v
-    return { grid: ng, pos: { r, c } }
-  }
+  // AI Logic - Tactical Suggestions (Local)
+  useEffect(() => {
+    if (!aiEnabled || isGameOver) return
+    
+    const timer = setTimeout(() => {
+      const bestMove = getBestMove(grid)
+      setAiSuggestion(bestMove)
+    }, 300) // Debounce
 
-  const compress = arr => {
-    const a = arr.filter(x => x !== 0)
-    while (a.length < 4) a.push(0)
-    return a
-  }
+    return () => clearTimeout(timer)
+  }, [grid, isGameOver, aiEnabled])
 
-  const mergeLine = line => {
-    let s = 0
-    const a = compress(line)
-    for (let i = 0; i < 3; i++) {
-      if (a[i] !== 0 && a[i] === a[i + 1]) {
-        a[i] = a[i] * 2
-        s += a[i]
-        a[i + 1] = 0
-      }
+  // AI Logic - Emotional Comments
+  const triggerAI = async (type) => {
+    if (!aiEnabled) return
+    // Use getGameState() to provide context for comments
+    const gameState = getGameState()
+    
+    // getComment is now async due to API call
+    const result = await getComment(type, gameState)
+    
+    // Check if result exists (it might fail silently or return default)
+    if (result) {
+      setAiMessage(result.text)
+      setAiMood(result.mood)
     }
-    return { line: compress(a), gained: s }
   }
 
-  const moveLeft = g => {
-    let moved = false
-    let gainedTotal = 0
-    const ng = g.map(row => {
-      const { line, gained } = mergeLine(row)
-      if (!moved && line.some((v, i) => v !== row[i])) moved = true
-      gainedTotal += gained
-      return line
-    })
-    return { grid: ng, moved, gained: gainedTotal }
-  }
-
-  const moveRight = g => {
-    let moved = false
-    let gainedTotal = 0
-    const ng = g.map(row => {
-      const rev = row.slice().reverse()
-      const { line, gained } = mergeLine(rev)
-      const res = line.slice().reverse()
-      if (!moved && res.some((v, i) => v !== row[i])) moved = true
-      gainedTotal += gained
-      return res
-    })
-    return { grid: ng, moved, gained: gainedTotal }
-  }
-
-  const moveUp = g => {
-    let moved = false
-    let gainedTotal = 0
-    const ng = Array.from({ length: 4 }, () => Array(4).fill(0))
-    for (let c = 0; c < 4; c++) {
-      const col = [g[0][c], g[1][c], g[2][c], g[3][c]]
-      const { line, gained } = mergeLine(col)
-      for (let r = 0; r < 4; r++) ng[r][c] = line[r]
-      if (!moved && line.some((v, i) => v !== col[i])) moved = true
-      gainedTotal += gained
+  const handleMove = (dir) => {
+    const { moved, gained } = performMove(dir)
+    
+    if (moved) {
+      if (gained > 100) triggerAI('good_move')
+      if (gained > 500) triggerAI('high_score')
     }
-    return { grid: ng, moved, gained: gainedTotal }
-  }
-
-  const moveDown = g => {
-    let moved = false
-    let gainedTotal = 0
-    const ng = Array.from({ length: 4 }, () => Array(4).fill(0))
-    for (let c = 0; c < 4; c++) {
-      const col = [g[3][c], g[2][c], g[1][c], g[0][c]]
-      const { line, gained } = mergeLine(col)
-      const res = line.slice().reverse()
-      for (let r = 0; r < 4; r++) ng[r][c] = res[r]
-      if (!moved && res.some((v, i) => v !== [g[0][c], g[1][c], g[2][c], g[3][c]][i])) moved = true
-      gainedTotal += gained
-    }
-    return { grid: ng, moved, gained: gainedTotal }
-  }
-
-  const handleMove = dir => {
-    let res
-    if (dir === 'left') res = moveLeft(grid)
-    else if (dir === 'right') res = moveRight(grid)
-    else if (dir === 'up') res = moveUp(grid)
-    else if (dir === 'down') res = moveDown(grid)
-    if (!res || !res.moved) return
-    prevGridRef.current = grid
-    const { grid: withTile, pos } = addRandomTile(res.grid)
-    setGrid(withTile)
-    setNewTilePos(pos)
-    setLastDir(dir)
-    setAnimating(true)
-    if (res.gained) setScore(v => v + res.gained)
   }
 
   const onKeyDown = e => {
@@ -131,7 +86,7 @@ function App() {
     const absDx = Math.abs(dx)
     const absDy = Math.abs(dy)
 
-    if (Math.max(absDx, absDy) > 30) { // 最小滑动距离阈值
+    if (Math.max(absDx, absDy) > 30) {
       if (absDx > absDy) {
         handleMove(dx > 0 ? 'right' : 'left')
       } else {
@@ -142,15 +97,15 @@ function App() {
   }
 
   useEffect(() => {
-    const { grid: g } = addRandomTile(addRandomTile(Array.from({ length: 4 }, () => Array(4).fill(0))).grid)
-    setGrid(g)
-    prevGridRef.current = g
-  }, [])
-
-  useEffect(() => {
+    // Focus game board on load
     const el = boardRef.current
     if (el) el.focus()
-  }, [boardRef])
+    // AI Greeting on start - Wrapped in timeout to avoid direct state update during render
+    const timer = setTimeout(() => {
+      triggerAI('start')
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [])
 
   useEffect(() => {
     if (animating) {
@@ -158,26 +113,34 @@ function App() {
       return () => clearTimeout(t)
     }
   }, [animating])
-
-  const reset = () => {
-    setGrid(Array.from({ length: 4 }, () => Array(4).fill(0)))
-    setScore(0)
-    const { grid: g } = addRandomTile(addRandomTile(Array.from({ length: 4 }, () => Array(4).fill(0))).grid)
-    setGrid(g)
-    setNewTilePos(null)
-    setLastDir(null)
-    prevGridRef.current = g
-    const el = boardRef.current
-    if (el) el.focus()
-  }
+  
+  // Check Game Over
+  useEffect(() => {
+    if (isGameOver) {
+      // Avoid direct state update
+      const timer = setTimeout(() => {
+        triggerAI('game_over')
+      }, 500)
+      return () => clearTimeout(timer)
+    }
+  }, [isGameOver])
 
   return (
     <div className="game">
       <div className="header">
         <h1>2048</h1>
         <div className="score" aria-live="polite">当前分数：{score}</div>
-        <button className="reset" onClick={reset}>重新开始</button>
+        <button className="reset" onClick={() => { resetGame(); triggerAI('start'); }}>重新开始</button>
       </div>
+      
+      <AIAssistant
+        message={aiMessage}
+        suggestion={aiSuggestion}
+        mood={aiMood}
+        aiEnabled={aiEnabled}
+        onToggle={() => setAiEnabled(!aiEnabled)}
+      />
+
       <div
         className="board"
         role="grid"
@@ -191,7 +154,7 @@ function App() {
         {grid.map((row, r) => (
           row.map((v, c) => {
             const isNew = newTilePos && newTilePos.r === r && newTilePos.c === c
-            const isChanged = prevGridRef.current && prevGridRef.current[r][c] !== v
+            const isChanged = prevGrid && prevGrid[r][c] !== v
             let animClass = ''
             if (isNew) animClass = 'pop-in'
             else if (isChanged && animating && lastDir) animClass = 'slide-' + lastDir
@@ -209,6 +172,7 @@ function App() {
           })
         ))}
       </div>
+      {isGameOver && <div className="game-over">游戏结束!</div>}
       <div className="hint">使用键盘方向键移动方块</div>
     </div>
   )
