@@ -37,6 +37,13 @@ function App() {
   const [isProcessingQueue, setIsProcessingQueue] = useState(false);
   const [lastAIInput, setLastAIInput] = useState("");
   const [lastAIOutput, setLastAIOutput] = useState("");
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [highScore] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    const stored = window.localStorage.getItem("highScore");
+    return stored ? Number(stored) || 0 : 0;
+  });
+  const effectiveHighScore = score > highScore ? score : highScore;
 
   // Message Queue Processor
   useEffect(() => {
@@ -107,6 +114,12 @@ function App() {
     greetedRef.current = true;
     setTimeout(() => triggerAI("start"), 0);
   }, [aiEnabled, triggerAI]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && effectiveHighScore !== highScore) {
+      window.localStorage.setItem("highScore", String(effectiveHighScore));
+    }
+  }, [effectiveHighScore, highScore]);
 
   const handleMove = (dir) => {
     const { moved, gained, newGrid } = performMove(dir);
@@ -205,34 +218,34 @@ function App() {
               <span className="score-label">分数</span>
               <span className="score-value">{score}</span>
             </div>
-            <button
-              className="reset"
-              aria-label="重新开始 (R)"
-              onClick={() => {
-                resetGame();
-                triggerAI("start");
-              }}
+            <div
+              className="score high-score"
+              aria-label={`历史最高分 ${effectiveHighScore}`}
             >
-              <span className="btn-icon" aria-hidden="true">
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M12 5V2L8 6l4 4V7c3.314 0 6 2.686 6 6s-2.686 6-6 6-6-2.686-6-6H4c0 4.418 3.582 8 8 8s8-3.582 8-8-3.582-8-8-8z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </span>
-              <span className="btn-text">重新开始</span>
-              <span className="kbd" aria-hidden="true">
-                R
-              </span>
-            </button>
+              <span className="score-label">历史最高</span>
+              <span className="score-value">{effectiveHighScore}</span>
+            </div>
           </div>
+        </div>
+        <div className="header-bottom">
+          <button
+            className="reset"
+            aria-label="重新开始 (R)"
+            onClick={() => {
+              resetGame();
+              triggerAI("start");
+            }}
+          >
+            <span className="btn-text">重新开始</span>
+          </button>
+          <button
+            className="menu-btn"
+            type="button"
+            aria-label="打开菜单"
+            onClick={() => setIsMenuOpen(true)}
+          >
+            <span className="btn-text">菜单</span>
+          </button>
         </div>
       </div>
 
@@ -289,6 +302,44 @@ function App() {
         )}
       </div>
       {isGameOver && <div className="game-over">游戏结束!</div>}
+      {isMenuOpen && (
+        <div
+          className="menu-modal-backdrop"
+          onClick={() => setIsMenuOpen(false)}
+        >
+          <div
+            className="menu-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="游戏菜单"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="menu-modal-title">游戏菜单</div>
+            <div className="menu-modal-actions">
+              <button
+                type="button"
+                className="menu-modal-btn"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                继续游戏
+              </button>
+              <button type="button" className="menu-modal-btn">
+                玩法说明
+              </button>
+              <button type="button" className="menu-modal-btn">
+                反馈建议
+              </button>
+              <button
+                type="button"
+                className="menu-modal-btn menu-modal-btn-secondary"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                关闭
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
