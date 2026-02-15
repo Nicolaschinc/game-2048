@@ -17,8 +17,11 @@
   --focus-ring-color: #8a4620;
   --tile-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
   --slide-distance: 22px;
-  --slide-duration: 280ms;
-  --slide-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --slide-duration: 300ms;
+  --slide-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --spring-overshoot: 6px;
+  --spring-rebound: 3px;
+  --spring-ease-merge: cubic-bezier(0.34, 1.56, 0.64, 1);
   --t-2-bg: #fff1e6;
   --t-4-bg: #ffe0cc;
   --t-8-bg: #ffc6a8;
@@ -49,6 +52,11 @@ a {
     }
   }
 
+html {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
 body {
   margin: 0;
   display: flex;
@@ -59,7 +67,10 @@ body {
   color: var(--color-text);
   user-select: none;
   -webkit-user-select: none;
+  overflow: hidden;
+  overscroll-behavior: none;
 }
+
 
 h1 {
   font-size: 3.2em;

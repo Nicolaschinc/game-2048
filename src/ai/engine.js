@@ -283,3 +283,48 @@ export const gameLogic = {
   move,
   evaluateGrid
 };
+
+const MINIMAX_DEPTH = 3;
+
+const minimax = (grid, depth, isPlayer) => {
+  if (depth === 0) return { score: evaluateGrid(grid) };
+  if (isPlayer) {
+    let bestScore = -Infinity;
+    let bestMove = -1;
+    for (let dir = 0; dir < 4; dir++) {
+      const { grid: nextGrid, moved } = move(grid, dir);
+      if (moved) {
+        const result = minimax(nextGrid, depth - 1, false);
+        if (result.score > bestScore) {
+          bestScore = result.score;
+          bestMove = dir;
+        }
+      }
+    }
+    if (bestMove === -1) return { score: -Infinity, move: -1 };
+    return { score: bestScore, move: bestMove };
+  } else {
+    const emptyCells = getAvailableCells(grid);
+    if (emptyCells.length === 0) return { score: evaluateGrid(grid) };
+    const candidates = emptyCells.length > 4 ? emptyCells.sort(() => 0.5 - Math.random()).slice(0, 4) : emptyCells;
+    let worstScore = Infinity;
+    for (const { r, c } of candidates) {
+      grid[r][c] = 2;
+      const s2 = minimax(grid, depth - 1, true).score;
+      grid[r][c] = 4;
+      const s4 = minimax(grid, depth - 1, true).score;
+      grid[r][c] = 0;
+      const s = Math.min(s2, s4);
+      if (s < worstScore) worstScore = s;
+    }
+    return { score: worstScore };
+  }
+};
+
+export const getBestMoveMinimax = (grid) => {
+  const start = performance.now();
+  const { move: bestMove, score } = minimax(grid, MINIMAX_DEPTH, true);
+  const end = performance.now();
+  console.log(`AI minimax ${(end-start).toFixed(2)}ms, chosen: ${DIR_NAMES[bestMove]}, score: ${score}`);
+  return DIR_NAMES[bestMove];
+};

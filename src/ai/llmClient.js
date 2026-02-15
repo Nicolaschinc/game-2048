@@ -4,6 +4,8 @@ import { TokenManager } from './tokenManager'
 // 使用 VITE_ 前缀的环境变量，以便在前端代码中访问
 const apiKey = import.meta.env.VITE_DEEPSEEK_API_KEY
 const baseURL = import.meta.env.VITE_DEEPSEEK_BASE_URL || 'https://api.deepseek.com'
+const aiSwitchRaw = String(import.meta.env.VITE_AI_SWITCH ?? '').toLowerCase()
+const aiSwitchOn = aiSwitchRaw === 'true' || aiSwitchRaw === '1' || aiSwitchRaw === 'yes'
 
 let openai = null
 
@@ -22,6 +24,9 @@ if (apiKey) {
  * @returns {Promise<{text: string, mood: string}>}
  */
 export const fetchAIComment = async (systemPrompt, userContent) => {
+  if (!aiSwitchOn) {
+    return null
+  }
   if (!openai) {
     console.warn('OpenAI client not initialized. Missing API Key.')
     return null
@@ -68,4 +73,4 @@ export const fetchAIComment = async (systemPrompt, userContent) => {
   }
 }
 
-export const isAIConfigured = () => !!openai && TokenManager.checkLimit()
+export const isAIConfigured = () => aiSwitchOn && !!openai && TokenManager.checkLimit()

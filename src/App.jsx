@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import "./App.scss";
 import useGameState from "./hooks/useGameState";
-import { getBestMove } from "./ai/engine";
+import { getBestMoveMinimax } from "./ai/engine";
 import { getComment } from "./ai/localComments";
 
 import AIAssistant from "./components/AIAssistant";
 
 function App() {
+  const aiSwitchRaw = String(import.meta.env.VITE_AI_SWITCH ?? '').toLowerCase();
+  const aiSwitchOn = aiSwitchRaw === 'true' || aiSwitchRaw === '1' || aiSwitchRaw === 'yes';
   const {
     grid,
     score,
@@ -27,7 +29,7 @@ function App() {
   const greetedRef = useRef(false);
 
   // State
-  const [aiEnabled, setAiEnabled] = useState(true);
+  const [aiEnabled, setAiEnabled] = useState(aiSwitchOn);
   const [aiMessage, setAiMessage] = useState(""); // Start empty
   const [aiMood, setAiMood] = useState("NEUTRAL");
   const [aiSuggestion, setAiSuggestion] = useState("");
@@ -67,9 +69,9 @@ function App() {
     if (!aiEnabled || isGameOver) return;
 
     const timer = setTimeout(() => {
-      const bestMove = getBestMove(grid);
+      const bestMove = getBestMoveMinimax(grid);
       setAiSuggestion(bestMove);
-    }, 300); // Debounce
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [grid, isGameOver, aiEnabled]);
@@ -80,7 +82,6 @@ function App() {
       if (!aiEnabled) return;
       // Use getGameState() to provide context for comments
       const gameState = getGameState();
-      console.log({ gameState });
       // getComment is now async due to API call
       const result = await getComment(type, gameState);
 
@@ -145,21 +146,17 @@ function App() {
     }
   };
 
-  const onTouchStart = (e) => {
-    setTouchStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+  const onPointerDown = (e) => {
+    setTouchStart({ x: e.clientX, y: e.clientY });
   };
 
-  const onTouchEnd = (e) => {
+  const onPointerUp = (e) => {
     if (!touchStart) return;
-    const touchEnd = {
-      x: e.changedTouches[0].clientX,
-      y: e.changedTouches[0].clientY,
-    };
-    const dx = touchEnd.x - touchStart.x;
-    const dy = touchEnd.y - touchStart.y;
+    const end = { x: e.clientX, y: e.clientY };
+    const dx = end.x - touchStart.x;
+    const dy = end.y - touchStart.y;
     const absDx = Math.abs(dx);
     const absDy = Math.abs(dy);
-
     if (Math.max(absDx, absDy) > 30) {
       if (absDx > absDy) {
         handleMove(dx > 0 ? "right" : "left");
@@ -178,7 +175,7 @@ function App() {
 
   useEffect(() => {
     if (animating) {
-      const t = setTimeout(() => setAnimating(false), 160);
+      const t = setTimeout(() => setAnimating(false), 300);
       return () => clearTimeout(t);
     }
   }, [animating, setAnimating]);
@@ -244,7 +241,13 @@ function App() {
         suggestion={aiSuggestion}
         mood={aiMood}
         aiEnabled={aiEnabled}
-        onToggle={() => setAiEnabled(!aiEnabled)}
+        onToggle={() => {
+          if (aiEnabled) {
+            setAiEnabled(false);
+          } else if (aiSwitchOn) {
+            setAiEnabled(true);
+          }
+        }}
         lastInput={lastAIInput}
         lastOutput={lastAIOutput}
       />
@@ -255,8 +258,8 @@ function App() {
         aria-label="2048游戏面板"
         tabIndex={0}
         onKeyDown={onKeyDown}
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
+        onPointerDown={onPointerDown}
+        onPointerUp={onPointerUp}
         ref={boardRef}
       >
         {grid.map((row, r) =>
