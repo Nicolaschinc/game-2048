@@ -3,12 +3,22 @@ import "./App.scss";
 import useGameState from "./hooks/useGameState";
 import { getBestMoveMinimax } from "./ai/engine";
 import { getComment } from "./ai/localComments";
+import SHA256 from "crypto-js/sha256";
+import { setLocal, removeLocal } from "./utils/storage";
 
 import AIAssistant from "./components/AIAssistant";
+import Header from "./components/Header";
+import Board from "./components/Board";
+import MenuModal from "./components/MenuModal";
+import LoginModal from "./components/LoginModal";
+import RegisterModal from "./components/RegisterModal";
 
 function App() {
-  const aiSwitchRaw = String(import.meta.env.VITE_AI_SWITCH ?? '').toLowerCase();
-  const aiSwitchOn = aiSwitchRaw === 'true' || aiSwitchRaw === '1' || aiSwitchRaw === 'yes';
+  const aiSwitchRaw = String(
+    import.meta.env.VITE_AI_SWITCH ?? "",
+  ).toLowerCase();
+  const aiSwitchOn =
+    aiSwitchRaw === "true" || aiSwitchRaw === "1" || aiSwitchRaw === "yes";
   const {
     grid,
     score,
@@ -38,12 +48,23 @@ function App() {
   const [lastAIInput, setLastAIInput] = useState("");
   const [lastAIOutput, setLastAIOutput] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [authMode, setAuthMode] = useState(null);
+  const [user, setUser] = useState(null);
   const [highScore] = useState(() => {
     if (typeof window === "undefined") return 0;
     const stored = window.localStorage.getItem("highScore");
     return stored ? Number(stored) || 0 : 0;
   });
   const effectiveHighScore = score > highScore ? score : highScore;
+
+  useEffect(() => {
+    console.log({ user });
+    if (user?.user) {
+      setLocal("user", user);
+    } else {
+      // removeLocal("user");
+    }
+  }, [user]);
 
   // Message Queue Processor
   useEffect(() => {
@@ -120,6 +141,10 @@ function App() {
       window.localStorage.setItem("highScore", String(effectiveHighScore));
     }
   }, [effectiveHighScore, highScore]);
+
+  const handleOpenAuth = (mode) => {
+    setAuthMode(mode);
+  };
 
   const handleMove = (dir) => {
     const { moved, gained, newGrid } = performMove(dir);
@@ -206,48 +231,17 @@ function App() {
 
   return (
     <div className="game">
-      <div className="header" role="banner">
-        <div className="header-top">
-          <h1 className="title">2048</h1>
-          <div className="actions">
-            <div
-              className="score"
-              aria-live="polite"
-              aria-label={`当前分数 ${score}`}
-            >
-              <span className="score-label">分数</span>
-              <span className="score-value">{score}</span>
-            </div>
-            <div
-              className="score high-score"
-              aria-label={`历史最高分 ${effectiveHighScore}`}
-            >
-              <span className="score-label">历史最高</span>
-              <span className="score-value">{effectiveHighScore}</span>
-            </div>
-          </div>
-        </div>
-        <div className="header-bottom">
-          <button
-            className="reset"
-            aria-label="重新开始 (R)"
-            onClick={() => {
-              resetGame();
-              triggerAI("start");
-            }}
-          >
-            <span className="btn-text">重新开始</span>
-          </button>
-          <button
-            className="menu-btn"
-            type="button"
-            aria-label="打开菜单"
-            onClick={() => setIsMenuOpen(true)}
-          >
-            <span className="btn-text">菜单</span>
-          </button>
-        </div>
-      </div>
+      <Header
+        score={score}
+        highScore={effectiveHighScore}
+        onReset={() => {
+          resetGame();
+          triggerAI("start");
+        }}
+        onOpenMenu={() => setIsMenuOpen(true)}
+        userName={user ? user.name : ""}
+        onOpenAuth={handleOpenAuth}
+      />
 
       <AIAssistant
         message={aiMessage}
@@ -265,81 +259,42 @@ function App() {
         lastOutput={lastAIOutput}
       />
 
-      <div
-        className="board"
-        role="grid"
-        aria-label="2048游戏面板"
-        tabIndex={0}
+      <Board
+        grid={grid}
+        prevGrid={prevGrid}
+        newTilePos={newTilePos}
+        mergedPositions={mergedPositions}
+        animating={animating}
+        lastDir={lastDir}
         onKeyDown={onKeyDown}
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}
-        ref={boardRef}
-      >
-        {grid.map((row, r) =>
-          row.map((v, c) => {
-            const isNew =
-              newTilePos && newTilePos.r === r && newTilePos.c === c;
-            const isChanged = prevGrid && prevGrid[r][c] !== v;
-            const isMerged =
-              mergedPositions &&
-              mergedPositions.some((p) => p.r === r && p.c === c);
-            let animClass = "";
-            if (isNew) animClass = "pop-in";
-            else if (isChanged && animating && lastDir)
-              animClass = "slide-" + lastDir;
-
-            return (
-              <div
-                key={`${r}-${c}`}
-                role="gridcell"
-                className={`tile ${v === 0 ? "empty" : "v-" + v} ${v !== 0 ? animClass : ""} ${isMerged && v !== 0 ? "merge-bounce" : ""}`}
-                aria-label={v === 0 ? "空" : String(v)}
-              >
-                <div className="tile-inner">{v !== 0 ? v : ""}</div>
-              </div>
-            );
-          }),
-        )}
-      </div>
+        boardRef={boardRef}
+      />
       {isGameOver && <div className="game-over">游戏结束!</div>}
-      {isMenuOpen && (
-        <div
-          className="menu-modal-backdrop"
-          onClick={() => setIsMenuOpen(false)}
-        >
-          <div
-            className="menu-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-label="游戏菜单"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="menu-modal-title">游戏菜单</div>
-            <div className="menu-modal-actions">
-              <button
-                type="button"
-                className="menu-modal-btn"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                继续游戏
-              </button>
-              <button type="button" className="menu-modal-btn">
-                玩法说明
-              </button>
-              <button type="button" className="menu-modal-btn">
-                反馈建议
-              </button>
-              <button
-                type="button"
-                className="menu-modal-btn menu-modal-btn-secondary"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                关闭
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <MenuModal
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        onLogout={() => setUser(null)}
+      />
+      <LoginModal
+        isOpen={authMode === "login"}
+        onClose={() => setAuthMode(null)}
+        onSwitchToRegister={() => setAuthMode("register")}
+        onLoginSuccess={(userData) => {
+          setUser(userData);
+          setAuthMode(null);
+        }}
+      />
+      <RegisterModal
+        isOpen={authMode === "register"}
+        onClose={() => setAuthMode(null)}
+        onSwitchToLogin={() => setAuthMode("login")}
+        onRegisterSuccess={(userData) => {
+          setUser(userData);
+          setAuthMode(null);
+        }}
+      />
     </div>
   );
 }
