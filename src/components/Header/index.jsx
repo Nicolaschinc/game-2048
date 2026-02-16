@@ -1,7 +1,14 @@
 import "./index.scss";
 import { getCookie, getLocal } from "../../utils/storage";
 
-function Header({ score, highScore, onReset, onOpenMenu, onOpenAuth }) {
+function Header({
+  score,
+  highScore,
+  onReset,
+  onOpenMenu,
+  onOpenAuth,
+  userName,
+}) {
   const token = typeof document !== "undefined" ? getCookie("token") : null;
   const storedUser = typeof window !== "undefined" ? getLocal("user") : null;
   const isLoggedIn = !!(token && storedUser);
@@ -49,13 +56,9 @@ function Header({ score, highScore, onReset, onOpenMenu, onOpenAuth }) {
             onClick={() => {
               if (onOpenAuth) onOpenAuth("login");
             }}
-            aria-label={
-              storedUser.nickName
-                ? `当前用户 ${storedUser.nickName || storedUser.email}`
-                : "当前用户"
-            }
+            aria-label={userName}
           >
-            {storedUser.name || '用户'}
+            {userName || "用户"}
           </button>
         )}
         <button className="reset" aria-label="重新开始 (R)" onClick={onReset}>

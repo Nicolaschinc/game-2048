@@ -4,7 +4,7 @@ import useGameState from "./hooks/useGameState";
 import { getBestMoveMinimax } from "./ai/engine";
 import { getComment } from "./ai/localComments";
 import SHA256 from "crypto-js/sha256";
-import { setLocal, removeLocal } from "./utils/storage";
+import { setLocal, removeLocal, getLocal } from "./utils/storage";
 
 import AIAssistant from "./components/AIAssistant";
 import Header from "./components/Header";
@@ -49,7 +49,7 @@ function App() {
   const [lastAIOutput, setLastAIOutput] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [authMode, setAuthMode] = useState(null);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(getLocal("user"));
   const [highScore] = useState(() => {
     if (typeof window === "undefined") return 0;
     const stored = window.localStorage.getItem("highScore");
@@ -58,11 +58,10 @@ function App() {
   const effectiveHighScore = score > highScore ? score : highScore;
 
   useEffect(() => {
-    console.log({ user });
     if (user?.user) {
       setLocal("user", user);
     } else {
-      // removeLocal("user");
+      removeLocal("user");
     }
   }, [user]);
 
@@ -239,10 +238,9 @@ function App() {
           triggerAI("start");
         }}
         onOpenMenu={() => setIsMenuOpen(true)}
-        userName={user ? user.name : ""}
+        userName={user ? user.nickname || user.email || "" : ""}
         onOpenAuth={handleOpenAuth}
       />
-
       <AIAssistant
         message={aiMessage}
         suggestion={aiSuggestion}

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "./index.scss";
 import { login as loginApi } from "../../api/auth";
-import { setCookie } from "../../utils/storage";
+import { setCookie, setLocal } from "../../utils/storage";
 import SHA256 from "crypto-js/sha256";
 
 function LoginModal({ isOpen, onClose, onSwitchToRegister, onLoginSuccess }) {
@@ -20,14 +20,15 @@ function LoginModal({ isOpen, onClose, onSwitchToRegister, onLoginSuccess }) {
       setSubmitting(true);
       const encryptedPassword = SHA256(password).toString();
       const data = await loginApi(email, encryptedPassword);
-      const dataUser = data.user;
-      const displayName = dataUser.nickname || dataUser.email || "";
-      const user = { name: displayName, ...data.user };
+
       if (typeof window !== "undefined" && data && data.token) {
         setCookie("token", data.token, { path: "/" });
       }
+
+      setLocal("user", data?.user);
+
       if (onLoginSuccess) {
-        onLoginSuccess(user);
+        onLoginSuccess(data.user);
       }
     } catch {
       const fallbackUser = { name: email, email };
