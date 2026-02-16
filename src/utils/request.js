@@ -5,7 +5,7 @@ const isDev = import.meta.env.DEV;
 const API_HOST = import.meta.env.VITE_API_HOST || "http://120.76.217.123:3000";
 
 const instance = axios.create({
-  baseURL: isDev ? "/api" : `${API_HOST}/api`,
+  baseURL: "/api",
   timeout: 10000,
   withCredentials: false,
 });

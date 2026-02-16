@@ -71,7 +71,8 @@
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 0.8rem;
+  max-width: 133px;
   background: var(--score-bg);
   color: var(--score-text);
   padding: 0.6rem 1rem 0.7rem;
