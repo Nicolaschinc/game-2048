@@ -1,13 +1,15 @@
 import { useState } from "react";
 import "./index.scss";
 import { login as loginApi } from "../../api/auth";
-import { setCookie, setLocal } from "../../utils/storage";
+import { setCookie } from "../../utils/storage";
+import { useUser } from "../../context/UserContext";
 import SHA256 from "crypto-js/sha256";
 
-function LoginModal({ isOpen, onClose, onSwitchToRegister, onLoginSuccess }) {
+function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
   const [account, setAccount] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const { setUser } = useUser();
 
   if (!isOpen) return null;
 
@@ -24,16 +26,15 @@ function LoginModal({ isOpen, onClose, onSwitchToRegister, onLoginSuccess }) {
       if (typeof window !== "undefined" && data && data.token) {
         setCookie("token", data.token, { path: "/" });
       }
-
-      setLocal("user", data?.user);
-
-      if (onLoginSuccess) {
-        onLoginSuccess(data.user);
+      setUser(data?.user || data);
+      if (onClose) {
+        onClose();
       }
     } catch {
       const fallbackUser = { name: email, email };
-      if (onLoginSuccess) {
-        onLoginSuccess(fallbackUser);
+      setUser(fallbackUser);
+      if (onClose) {
+        onClose();
       }
     } finally {
       setSubmitting(false);

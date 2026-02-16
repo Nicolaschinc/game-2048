@@ -3,8 +3,7 @@ import "./App.scss";
 import useGameState from "./hooks/useGameState";
 import { getBestMoveMinimax } from "./ai/engine";
 import { getComment } from "./ai/localComments";
-import SHA256 from "crypto-js/sha256";
-import { setLocal, removeLocal, getLocal } from "./utils/storage";
+import { UserProvider } from "./context/UserContext";
 
 import AIAssistant from "./components/AIAssistant";
 import Header from "./components/Header";
@@ -49,21 +48,12 @@ function App() {
   const [lastAIOutput, setLastAIOutput] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [authMode, setAuthMode] = useState(null);
-  const [user, setUser] = useState(getLocal("user"));
   const [highScore] = useState(() => {
     if (typeof window === "undefined") return 0;
     const stored = window.localStorage.getItem("highScore");
     return stored ? Number(stored) || 0 : 0;
   });
   const effectiveHighScore = score > highScore ? score : highScore;
-
-  useEffect(() => {
-    if (user?.user) {
-      setLocal("user", user);
-    } else {
-      removeLocal("user");
-    }
-  }, [user]);
 
   // Message Queue Processor
   useEffect(() => {
@@ -229,71 +219,63 @@ function App() {
   }, [isGameOver, triggerAI]);
 
   return (
-    <div className="game">
-      <Header
-        score={score}
-        highScore={effectiveHighScore}
-        onReset={() => {
-          resetGame();
-          triggerAI("start");
-        }}
-        onOpenMenu={() => setIsMenuOpen(true)}
-        userName={user ? user.nickname || user.email || "" : ""}
-        onOpenAuth={handleOpenAuth}
-      />
-      <AIAssistant
-        message={aiMessage}
-        suggestion={aiSuggestion}
-        mood={aiMood}
-        aiEnabled={aiEnabled}
-        onToggle={() => {
-          if (aiEnabled) {
-            setAiEnabled(false);
-          } else if (aiSwitchOn) {
-            setAiEnabled(true);
-          }
-        }}
-        lastInput={lastAIInput}
-        lastOutput={lastAIOutput}
-      />
+    <UserProvider>
+      <div className="game">
+        <Header
+          score={score}
+          highScore={effectiveHighScore}
+          onReset={() => {
+            resetGame();
+            triggerAI("start");
+          }}
+          onOpenMenu={() => setIsMenuOpen(true)}
+          onOpenAuth={handleOpenAuth}
+        />
+        <AIAssistant
+          message={aiMessage}
+          suggestion={aiSuggestion}
+          mood={aiMood}
+          aiEnabled={aiEnabled}
+          onToggle={() => {
+            if (aiEnabled) {
+              setAiEnabled(false);
+            } else if (aiSwitchOn) {
+              setAiEnabled(true);
+            }
+          }}
+          lastInput={lastAIInput}
+          lastOutput={lastAIOutput}
+        />
 
-      <Board
-        grid={grid}
-        prevGrid={prevGrid}
-        newTilePos={newTilePos}
-        mergedPositions={mergedPositions}
-        animating={animating}
-        lastDir={lastDir}
-        onKeyDown={onKeyDown}
-        onPointerDown={onPointerDown}
-        onPointerUp={onPointerUp}
-        boardRef={boardRef}
-      />
-      {isGameOver && <div className="game-over">游戏结束!</div>}
-      <MenuModal
-        isOpen={isMenuOpen}
-        onClose={() => setIsMenuOpen(false)}
-        onLogout={() => setUser(null)}
-      />
-      <LoginModal
-        isOpen={authMode === "login"}
-        onClose={() => setAuthMode(null)}
-        onSwitchToRegister={() => setAuthMode("register")}
-        onLoginSuccess={(userData) => {
-          setUser(userData);
-          setAuthMode(null);
-        }}
-      />
-      <RegisterModal
-        isOpen={authMode === "register"}
-        onClose={() => setAuthMode(null)}
-        onSwitchToLogin={() => setAuthMode("login")}
-        onRegisterSuccess={(userData) => {
-          setUser(userData);
-          setAuthMode(null);
-        }}
-      />
-    </div>
+        <Board
+          grid={grid}
+          prevGrid={prevGrid}
+          newTilePos={newTilePos}
+          mergedPositions={mergedPositions}
+          animating={animating}
+          lastDir={lastDir}
+          onKeyDown={onKeyDown}
+          onPointerDown={onPointerDown}
+          onPointerUp={onPointerUp}
+          boardRef={boardRef}
+        />
+        {isGameOver && <div className="game-over">游戏结束!</div>}
+        <MenuModal
+          isOpen={isMenuOpen}
+          onClose={() => setIsMenuOpen(false)}
+        />
+        <LoginModal
+          isOpen={authMode === "login"}
+          onClose={() => setAuthMode(null)}
+          onSwitchToRegister={() => setAuthMode("register")}
+        />
+        <RegisterModal
+          isOpen={authMode === "register"}
+          onClose={() => setAuthMode(null)}
+          onSwitchToLogin={() => setAuthMode("login")}
+        />
+      </div>
+    </UserProvider>
   );
 }
 

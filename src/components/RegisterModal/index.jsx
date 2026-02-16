@@ -3,18 +3,19 @@ import "./index.scss";
 import { register as registerApi } from "../../api/auth";
 import SHA256 from "crypto-js/sha256";
 import { setCookie } from "../../utils/storage";
+import { useUser } from "../../context/UserContext";
 
 function RegisterModal({
   isOpen,
   onClose,
   onSwitchToLogin,
-  onRegisterSuccess,
 }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const { setUser } = useUser();
 
   if (!isOpen) return null;
 
@@ -60,20 +61,18 @@ function RegisterModal({
     try {
       setSubmitting(true);
       const data = await registerApi(trimmedEmail, encryptedPassword);
-      const displayName =
-        (data && (data.name || data.nickname || data.email)) ||
-        trimmedEmail;
-      const user = { name: displayName, ...data };
       if (typeof window !== "undefined" && data && data.token) {
         setCookie("token", data.token, { path: "/" });
       }
-      if (onRegisterSuccess) {
-        onRegisterSuccess(user);
+      setUser(data?.user || data);
+      if (onClose) {
+        onClose();
       }
     } catch {
       const fallbackUser = { name: trimmedEmail, email: trimmedEmail };
-      if (onRegisterSuccess) {
-        onRegisterSuccess(fallbackUser);
+      setUser(fallbackUser);
+      if (onClose) {
+        onClose();
       }
     } finally {
       setSubmitting(false);

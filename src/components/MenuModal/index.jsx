@@ -1,20 +1,13 @@
 import "./index.scss";
-import { getCookie, getLocal, removeCookie, removeLocal } from "../../utils/storage";
+import { useUser } from "../../context/UserContext";
 
-function MenuModal({ isOpen, onClose, onLogout }) {
+function MenuModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
-  const token = typeof document !== "undefined" ? getCookie("token") : null;
-  const storedUser =
-    typeof window !== "undefined" ? getLocal("user") : null;
-  const isLoggedIn = !!(token && storedUser);
+  const { isLoggedIn, clearUser } = useUser();
 
   const handleLogout = () => {
-    removeCookie("token", { path: "/" });
-    removeLocal("user");
-    if (onLogout) {
-      onLogout();
-    }
+    clearUser();
     if (onClose) {
       onClose();
     }

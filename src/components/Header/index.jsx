@@ -1,20 +1,8 @@
 import "./index.scss";
-import { getCookie, getLocal } from "../../utils/storage";
+import { useUser } from "../../context/UserContext";
 
-function Header({
-  score,
-  highScore,
-  onReset,
-  onOpenMenu,
-  onOpenAuth,
-  userName,
-}) {
-  const token = typeof document !== "undefined" ? getCookie("token") : null;
-  const storedUser = typeof window !== "undefined" ? getLocal("user") : null;
-  const isLoggedIn = !!(token && storedUser);
-  console.log({ storedUser });
-  console.log({ token });
-  console.log({ isLoggedIn });
+function Header({ score, highScore, onReset, onOpenMenu, onOpenAuth }) {
+  const { isLoggedIn, userName } = useUser();
   return (
     <div className="header" role="banner">
       <div className="header-top">
@@ -56,7 +44,7 @@ function Header({
             onClick={() => {
               if (onOpenAuth) onOpenAuth("login");
             }}
-            aria-label={userName}
+            aria-label={userName || "当前用户"}
           >
             {userName || "用户"}
           </button>
