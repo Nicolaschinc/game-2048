@@ -4,6 +4,7 @@ import useGameState from "./hooks/useGameState";
 import { getBestMoveMinimax } from "./ai/engine";
 import { getComment } from "./ai/localComments";
 import { UserProvider } from "./context/UserContext";
+import { initGA, logPageView, logEvent } from "./utils/analytics";
 
 import AIAssistant from "./components/AIAssistant";
 import Header from "./components/Header";
@@ -54,6 +55,12 @@ function App() {
     return stored ? Number(stored) || 0 : 0;
   });
   const effectiveHighScore = score > highScore ? score : highScore;
+
+  // Initialize Analytics
+  useEffect(() => {
+    initGA();
+    logPageView(window.location.pathname);
+  }, []);
 
   // Message Queue Processor
   useEffect(() => {
@@ -139,6 +146,7 @@ function App() {
     const { moved, gained, newGrid } = performMove(dir);
 
     if (moved) {
+      logEvent('move', { category: 'Game', label: dir, value: gained || 0 });
       // Prioritize high value events
       if (gained > 500) {
         triggerAI("high_score");
@@ -210,13 +218,14 @@ function App() {
   // Check Game Over
   useEffect(() => {
     if (isGameOver) {
+      logEvent('game_over', { category: 'Game', label: 'Score', value: score });
       // Avoid direct state update
       const timer = setTimeout(() => {
         triggerAI("game_over");
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [isGameOver, triggerAI]);
+  }, [isGameOver, triggerAI, score]);
 
   return (
     <UserProvider>
