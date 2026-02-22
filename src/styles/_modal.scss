@@ -1,0 +1,120 @@
+// 通用弹窗样式：MenuModal / LoginModal / RegisterModal 共用
+
+.menu-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+
+.menu-modal {
+  width: min(320px, 90vw);
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 1rem 1rem 1.1rem;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+}
+
+.menu-modal-title {
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.menu-modal-actions {
+  margin-top: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.menu-modal-actions .auth-field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.menu-modal-actions .auth-field span {
+  color: var(--score-text);
+}
+
+.menu-modal-actions .auth-field input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.4rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--reset-border);
+  font: inherit;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.menu-modal-actions .auth-switch-link {
+  margin-top: 0.15rem;
+  font-size: 0.8rem;
+  color: var(--accent);
+  text-align: center;
+  cursor: pointer;
+}
+
+.menu-modal-actions .auth-error {
+  margin-top: 0.1rem;
+  font-size: 0.78rem;
+  color: var(--error);
+}
+
+.menu-modal-btn {
+  width: 100%;
+  border-radius: 999px;
+  border: 1px solid var(--reset-border);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  background-color: var(--reset-bg);
+  color: var(--accent);
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    transform 80ms ease;
+
+  &:hover {
+    border-color: var(--reset-hover-border);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.menu-modal-btn-secondary {
+  border-color: transparent;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.menu-modal-btn-disabled,
+.menu-modal-btn[disabled] {
+  border-color: rgba(0, 0, 0, 0.04);
+  background-color: rgba(0, 0, 0, 0.02);
+  color: rgba(0, 0, 0, 0.28);
+  cursor: default;
+  pointer-events: none;
+}
+
+@media (max-width: 767px) {
+  .menu-modal-backdrop {
+    align-items: flex-start;
+  }
+
+  .menu-modal {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    border-radius: 0;
+    padding: 1.2rem 1rem 1.4rem;
+  }
+}

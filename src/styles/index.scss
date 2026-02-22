@@ -1,0 +1,8 @@
+// 全局样式入口：变量 → 重置 → 基础 → 动画 → 弹窗
+// 组件级样式仍在各组件目录下按需引入
+
+@use "variables";
+@use "reset";
+@use "base";
+@use "animations";
+@use "modal";

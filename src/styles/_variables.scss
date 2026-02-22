@@ -1,0 +1,91 @@
+// 设计令牌与主题变量
+// 供全局与组件通过 var(--name) 引用
+
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: light dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  // 全局
+  --color-bg: #faf7f4;
+  --color-text: #2a1e1a;
+  --accent: #8a4620;
+  --link: #3f68e0;
+  --focus-ring-color: #8a4620;
+
+  // 面板/表面（弹窗、气泡等）
+  --surface: #ffffff;
+  --surface-border: #e0e0e0;
+  --text-muted: #555;
+  --text-muted-2: #999;
+  --error: #d03030;
+
+  // 棋盘与格子
+  --board-bg: #efe0d4;
+  --board-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  --empty-bg: #f6e9df;
+  --tile-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  --slide-distance: 22px;
+  --slide-duration: 300ms;
+  --slide-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --spring-overshoot: 6px;
+  --spring-rebound: 3px;
+  --spring-ease-merge: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  // 分数与按钮
+  --score-bg: #f3d1b8;
+  --score-text: #7a3b1c;
+  --reset-bg: #ffe7d6;
+  --reset-border: #e0996d;
+  --reset-hover-border: #d67c45;
+
+  // 数字块颜色
+  --t-2-bg: #fff1e6;
+  --t-4-bg: #ffe0cc;
+  --t-8-bg: #ffc6a8;
+  --t-16-bg: #ffb387;
+  --t-32-bg: #ff9f6b;
+  --t-64-bg: #ff8a4f;
+  --t-128-bg: #ff7438;
+  --t-256-bg: #ff5d23;
+  --t-512-bg: #ff4713;
+  --t-1024-bg: #e23b0d;
+  --t-2048-bg: #d23609;
+  --t-low-text: #6b3a1a;
+  --t-mid-text: #2e1609;
+  --t-high-text: #ffffff;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-bg: #faf7f4;
+    --color-text: #2a1e1a;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #171512;
+    --color-text: #f4ede7;
+    --link: #7a9eff;
+    --surface: #2a2520;
+    --surface-border: #4a4038;
+    --text-muted: #c4b8ad;
+    --text-muted-2: #8a7d72;
+    --error: #e86c6c;
+    --board-bg: #34251d;
+    --empty-bg: #3b2a22;
+    --score-bg: #5a3a2a;
+    --score-text: #f4ede7;
+    --reset-bg: #3a2921;
+    --reset-border: #9d6a49;
+    --reset-hover-border: #b07a55;
+    --focus-ring-color: #d9a579;
+    --tile-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+}

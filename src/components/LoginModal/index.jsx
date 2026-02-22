@@ -1,5 +1,4 @@
 import { useState } from "react";
-import "./index.scss";
 import { login as loginApi } from "../../api/auth";
 import { setCookie } from "../../utils/storage";
 import { useUser } from "../../context/UserContext";

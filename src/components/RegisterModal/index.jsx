@@ -1,5 +1,4 @@
 import { useState } from "react";
-import "./index.scss";
 import { register as registerApi } from "../../api/auth";
 import SHA256 from "crypto-js/sha256";
 import { setCookie } from "../../utils/storage";

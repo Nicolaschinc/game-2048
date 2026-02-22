@@ -1,4 +1,3 @@
-import "./index.scss";
 import { useUser } from "../../context/UserContext";
 
 function MenuModal({ isOpen, onClose }) {
