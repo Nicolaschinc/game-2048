@@ -8,6 +8,7 @@ const packageJson = JSON.parse(
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: "/game2048/",
   define: {
     __APP_VERSION__: JSON.stringify(packageJson.version),
   },
