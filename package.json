@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "mcp:chrome-devtools": "npx -y chrome-devtools-mcp@latest"
   },
   "dependencies": {
     "axios": "^1.13.5",
